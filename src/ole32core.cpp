@@ -4,25 +4,28 @@
 */
 
 #include "ole32core.h"
+#include <malloc.h>
 
 using namespace std;
-
-namespace ole32core {
+namespace ole32core
+{
 
 bool chkerr(bool b, char *m, int n, char *f, char *e)
 {
-  if(b) return b;
+  if (b)
+    return b;
   DWORD code = GetLastError();
   WCHAR *buf;
-  FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER
-    | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-    NULL, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-    (LPWSTR)&buf, 0, NULL);
+  FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                 NULL, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                 (LPWSTR)&buf, 0, NULL);
   fprintf(stderr, "ASSERT in %08x module %s(%d) @%s: %s\n", code, m, n, f, e);
   // fwprintf(stderr, L"error: %s", buf); // Some wchars can't see on console.
   char *mbs = wcs2mbs(buf);
-  if(!mbs) MessageBoxW(NULL, buf, L"error", MB_ICONEXCLAMATION | MB_OK);
-  else fprintf(stderr, "error: %s", mbs);
+  if (!mbs)
+    MessageBoxW(NULL, buf, L"error", MB_ICONEXCLAMATION | MB_OK);
+  else
+    fprintf(stderr, "error: %s", mbs);
   free(mbs);
   LocalFree(buf);
   return b;
@@ -48,10 +51,10 @@ wchar_t *u8s2wcs(char *u8s)
 char *wcs2mbs(wchar_t *wcs)
 {
   size_t mblen = WideCharToMultiByte(GetACP(), 0,
-    (LPCWSTR)wcs, -1, NULL, 0, NULL, NULL);
+                                     (LPCWSTR)wcs, -1, NULL, 0, NULL, NULL);
   char *mbs = (char *)malloc((mblen + 1));
   mblen = WideCharToMultiByte(GetACP(), 0,
-    (LPCWSTR)wcs, -1, mbs, mblen, NULL, NULL); // not + 1
+                              (LPCWSTR)wcs, -1, mbs, mblen, NULL, NULL); // not + 1
   mbs[mblen] = '\0';
   return mbs; // locale mbs *** must be free later ***
 }
@@ -61,26 +64,31 @@ char *wcs2mbs(wchar_t *wcs)
 // locale mbs -> Unicode -> UTF-8 (without free when use _malloca)
 string MBCS2UTF8(string mbs)
 {
-  if(mbs == "") return "";
+  if (mbs == "")
+    return "";
   int wlen = MultiByteToWideChar(CP_ACP, 0, mbs.c_str(), -1, NULL, 0);
   WCHAR *wbuf = (WCHAR *)_malloca((wlen + 1) * sizeof(WCHAR));
-  if(wbuf == NULL){
+  if (wbuf == NULL)
+  {
     throw "_malloca failed for MBCS to UNICODE";
     return "";
   }
   *wbuf = L'\0';
-  if(MultiByteToWideChar(CP_ACP, 0, mbs.c_str(), -1, wbuf, wlen) <= 0){
+  if (MultiByteToWideChar(CP_ACP, 0, mbs.c_str(), -1, wbuf, wlen) <= 0)
+  {
     throw "can't convert MBCS to UNICODE";
     return "";
   }
   int ulen = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, NULL, 0, NULL, NULL);
   char *ubuf = (char *)_malloca((ulen + 1) * sizeof(char));
-  if(ubuf == NULL){
+  if (ubuf == NULL)
+  {
     throw "_malloca failed for UNICODE to UTF8";
     return "";
   }
   *ubuf = '\0';
-  if(WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, ubuf, ulen, NULL, NULL) <= 0){
+  if (WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, ubuf, ulen, NULL, NULL) <= 0)
+  {
     throw "can't convert UNICODE to UTF8";
     return "";
   }
@@ -91,26 +99,31 @@ string MBCS2UTF8(string mbs)
 // UTF8 -> Unicode -> locale mbs (without free when use _malloca)
 string UTF82MBCS(string utf8)
 {
-  if(utf8 == "") return "";
+  if (utf8 == "")
+    return "";
   int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, NULL, 0);
   WCHAR *wbuf = (WCHAR *)_malloca((wlen + 1) * sizeof(WCHAR));
-  if(wbuf == NULL){
+  if (wbuf == NULL)
+  {
     throw "_malloca failed for UTF8 to UNICODE";
     return "";
   }
   *wbuf = L'\0';
-  if(MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wbuf, wlen) <= 0){
+  if (MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wbuf, wlen) <= 0)
+  {
     throw "can't convert UTF8 to UNICODE";
     return "";
   }
   int slen = WideCharToMultiByte(CP_ACP, 0, wbuf, -1, NULL, 0, NULL, NULL);
   char *sbuf = (char *)_malloca((slen + 1) * sizeof(char));
-  if(sbuf == NULL){
+  if (sbuf == NULL)
+  {
     throw "_malloca failed for UNICODE to MBCS";
     return "";
   }
   *sbuf = '\0';
-  if(WideCharToMultiByte(CP_ACP, 0, wbuf, -1, sbuf, slen, NULL, NULL) <= 0){
+  if (WideCharToMultiByte(CP_ACP, 0, wbuf, -1, sbuf, slen, NULL, NULL) <= 0)
+  {
     throw "can't convert UNICODE to MBCS";
     return "";
   }
@@ -121,19 +134,22 @@ string UTF82MBCS(string utf8)
 // locale mbs -> Unicode (allocate wcs, must free)
 WCHAR *MBCS2WCS(string mbs)
 {
-  if(mbs == ""){
+  if (mbs == "")
+  {
     throw "assigned empty string for MBCS to UNICODE";
     return NULL;
   }
   int wlen = MultiByteToWideChar(CP_ACP, 0, mbs.c_str(), -1, NULL, 0);
   WCHAR *wbuf = new WCHAR[wlen + 1];
-  if(wbuf == NULL){
+  if (wbuf == NULL)
+  {
     throw "_malloca failed for MBCS to UNICODE";
     return NULL;
   }
   *wbuf = L'\0';
-  if(MultiByteToWideChar(CP_ACP, 0, mbs.c_str(), -1, wbuf, wlen) <= 0){
-    delete [] wbuf;
+  if (MultiByteToWideChar(CP_ACP, 0, mbs.c_str(), -1, wbuf, wlen) <= 0)
+  {
+    delete[] wbuf;
     throw "can't convert MBCS to UNICODE";
     return NULL;
   }
@@ -143,15 +159,18 @@ WCHAR *MBCS2WCS(string mbs)
 // Unicode -> locale mbs (not free wcs, without free when use _malloca)
 string WCS2MBCS(WCHAR *wbuf)
 {
-  if(wbuf == NULL || wbuf[0] == L'\0') return "";
+  if (wbuf == NULL || wbuf[0] == L'\0')
+    return "";
   int slen = WideCharToMultiByte(CP_ACP, 0, wbuf, -1, NULL, 0, NULL, NULL);
   char *sbuf = (char *)_malloca((slen + 1) * sizeof(char));
-  if(sbuf == NULL){
+  if (sbuf == NULL)
+  {
     throw "_malloca failed for UNICODE to MBCS";
     return "";
   }
   *sbuf = '\0';
-  if(WideCharToMultiByte(CP_ACP, 0, wbuf, -1, sbuf, slen, NULL, NULL) <= 0){
+  if (WideCharToMultiByte(CP_ACP, 0, wbuf, -1, sbuf, slen, NULL, NULL) <= 0)
+  {
     throw "can't convert UNICODE to MBCS";
     return "";
   }
@@ -168,7 +187,7 @@ BSTR MBCS2BSTR(string str)
   mbstowcs(wbuf, str.c_str(), len);
   wbuf[len] = L'\0';
   bstr = ::SysAllocString(wbuf);
-  delete [] wbuf;
+  delete[] wbuf;
   return bstr;
 }
 
@@ -182,7 +201,7 @@ string BSTR2MBCS(BSTR bstr)
   wcstombs(buf, bstr, len);
   buf[len] = '\0';
   str = buf;
-  delete [] buf;
+  delete[] buf;
   return str;
 }
 
@@ -190,7 +209,8 @@ string OLE32coreException::errorMessage(char *m)
 {
   ostringstream oss;
   oss << "OLE error: ";
-  if(m) oss << "[" << m << "] ";
+  if (m)
+    oss << "[" << m << "] ";
   oss << rmsg << endl;
   return oss.str();
 }
@@ -277,15 +297,19 @@ OCVariant::~OCVariant()
   DISPFUNCIN();
   DISPFUNCDAT("--destruction-- %p %08lx\n", &v, v.vt);
   DISPFUNCDAT("---(first step in)%d%d", 0, 0);
-#if(0) // recursive (use stack)
-  if(next){
+#if (0) // recursive (use stack)
+  if (next)
+  {
     delete next;
     next = NULL;
   }
 #else // loop (not use stack)
-  while(next){
+  while (next)
+  {
     OCVariant **p; // use scope after for
-    for(p = &next; (*p)->next; p = &(*p)->next){} // find tail
+    for (p = &next; (*p)->next; p = &(*p)->next)
+    {
+    }          // find tail
     delete *p; // delete a tail ( p points &next when all tails are deleted )
     *p = NULL;
   }
@@ -295,12 +319,14 @@ OCVariant::~OCVariant()
   DISPFUNCDAT("---(first step out)%d%d", 0, 0);
   DISPFUNCDAT("---(second step in)%d%d", 0, 0);
   // bug ? comment (see old ole32core.cpp project)
-  if((v.vt == VT_DISPATCH) && v.pdispVal){ // app
+  if ((v.vt == VT_DISPATCH) && v.pdispVal)
+  { // app
     v.pdispVal->Release();
     VariantClear(&v); // need it
     v.pdispVal = NULL;
   }
-  if((v.vt == VT_BSTR) && v.bstrVal){
+  if ((v.vt == VT_BSTR) && v.bstrVal)
+  {
     ::SysFreeString(v.bstrVal);
     VariantClear(&v); // need it
     v.bstrVal = NULL;
@@ -322,7 +348,8 @@ OCVariant *OCVariant::push(OCVariant *p)
 unsigned int OCVariant::size()
 {
   unsigned int c = 1; // for self
-  for(OCVariant *p = next; p; p = p->next){
+  for (OCVariant *p = next; p; p = p->next)
+  {
     c++;
   }
   return c;
@@ -336,7 +363,7 @@ void OCVariant::checkOLEresult(string msg)
 
 // AutoWrap() - Automation helper function...
 HRESULT OCVariant::AutoWrap(int autoType, VARIANT *pvResult,
-  LPOLESTR ptName, OCVariant *argchain)
+                            LPOLESTR ptName, OCVariant *argchain)
 {
   // bug ? comment (see old ole32core.cpp project)
   // execute at the first time to safety free argchain
@@ -344,29 +371,33 @@ HRESULT OCVariant::AutoWrap(int autoType, VARIANT *pvResult,
   unsigned int size = argchain ? argchain->size() : 0;
   VARIANT *pArgs = new VARIANT[size];
   OCVariant *p = argchain;
-  for(unsigned int i = 0; p; i++, p = p->next){
+  for (unsigned int i = 0; p; i++, p = p->next)
+  {
     // bug ? comment (see old ole32core.cpp project)
     // will be reallocated BSTR whein using VariantCopy() (see by debugger)
     VariantInit(&pArgs[i]); // It will be free before copy.
     VariantCopy(&pArgs[i], &p->v);
   }
-  if(argchain) delete argchain;
+  if (argchain)
+    delete argchain;
   // bug ? comment (see old ole32core.cpp project)
   // unexpected free original BSTR
   HRESULT hr = NULL;
-  if(!v.pdispVal){
+  if (!v.pdispVal)
+  {
     checkOLEresult("Called with NULL IDispatch. AutoWrap");
     return hr;
   }
   // Convert down to ANSI (for error message only)
   char szName[256];
   WideCharToMultiByte(CP_ACP, 0,
-    ptName, -1, szName, sizeof(szName), NULL, NULL);
+                      ptName, -1, szName, sizeof(szName), NULL, NULL);
   // Get DISPID for name passed...
   DISPID dispID;
   hr = v.pdispVal->GetIDsOfNames(IID_NULL, &ptName, 1,
-    LOCALE_USER_DEFAULT, &dispID); // or _SYSTEM_ ?
-  if(FAILED(hr)){
+                                 LOCALE_USER_DEFAULT, &dispID); // or _SYSTEM_ ?
+  if (FAILED(hr))
+  {
     ostringstream oss;
     oss << hr << " [" << szName << "] ";
     oss << "IDispatch::GetIDsOfNames AutoWrap";
@@ -374,32 +405,34 @@ HRESULT OCVariant::AutoWrap(int autoType, VARIANT *pvResult,
     return hr;
   }
   // Build DISPPARAMS
-  DISPPARAMS dp = { NULL, NULL, 0, 0 };
+  DISPPARAMS dp = {NULL, NULL, 0, 0};
   dp.cArgs = size;
   dp.rgvarg = pArgs;
   // Handle special-case for property-puts!
   DISPID dispidNamed = DISPID_PROPERTYPUT;
-  if(autoType & DISPATCH_PROPERTYPUT){
+  if (autoType & DISPATCH_PROPERTYPUT)
+  {
     dp.cNamedArgs = 1;
     dp.rgdispidNamedArgs = &dispidNamed;
   }
   EXCEPINFO exceptInfo;
   // Make the call!
   hr = v.pdispVal->Invoke(dispID, IID_NULL,
-    LOCALE_USER_DEFAULT, autoType, &dp, pvResult, &exceptInfo, NULL); // or _SYSTEM_ ?
-  delete [] pArgs;
-  if(FAILED(hr)){
+                          LOCALE_USER_DEFAULT, autoType, &dp, pvResult, &exceptInfo, NULL); // or _SYSTEM_ ?
+  delete[] pArgs;
+  if (FAILED(hr))
+  {
 
-	// Convert down to ANSI (for error message only)
-	char szErrSource[256];
-	WideCharToMultiByte(CP_ACP, 0, exceptInfo.bstrSource, -1, szErrSource, sizeof(szErrSource), NULL, NULL);
-	char szErrDescription[256];
-	WideCharToMultiByte(CP_ACP, 0, exceptInfo.bstrDescription, -1, szErrDescription, sizeof(szErrDescription), NULL, NULL);
+    // Convert down to ANSI (for error message only)
+    char szErrSource[256];
+    WideCharToMultiByte(CP_ACP, 0, exceptInfo.bstrSource, -1, szErrSource, sizeof(szErrSource), NULL, NULL);
+    char szErrDescription[256];
+    WideCharToMultiByte(CP_ACP, 0, exceptInfo.bstrDescription, -1, szErrDescription, sizeof(szErrDescription), NULL, NULL);
 
-	ostringstream oss;
+    ostringstream oss;
     oss << hr << " [" << szName << "] = [" << dispID << "]\r\n";
-	oss << szErrSource << ": ";
-	oss << szErrDescription << "\r\n";
+    oss << szErrSource << ": ";
+    oss << szErrDescription << "\r\n";
     oss << "(It always seems to be appeared at that time you mistake calling ";
     oss << "'obj.get { ocv->getProp() }' <-> 'obj.call { ocv->invoke() }'.) ";
     oss << "IDispatch::Invoke AutoWrap";
@@ -413,7 +446,7 @@ OCVariant *OCVariant::getProp(LPOLESTR prop, OCVariant *argchain)
 {
   OCVariant *r = new OCVariant();
   AutoWrap(DISPATCH_PROPERTYGET, &r->v, prop, argchain); // distinguish METHOD
-  return r; // may be called with DISPATCH_PROPERTYGET|DISPATCH_METHOD
+  return r;                                              // may be called with DISPATCH_PROPERTYGET|DISPATCH_METHOD
   // 'METHOD' may be called only with DISPATCH_PROPERTYGET
   // but 'PROPERTY' must not be called only with DISPATCH_METHOD
 }
@@ -426,10 +459,13 @@ OCVariant *OCVariant::putProp(LPOLESTR prop, OCVariant *argchain)
 
 OCVariant *OCVariant::invoke(LPOLESTR method, OCVariant *argchain, bool re)
 {
-  if(!re){
+  if (!re)
+  {
     AutoWrap(DISPATCH_METHOD, NULL, method, argchain);
     return this;
-  }else{
+  }
+  else
+  {
     OCVariant *r = new OCVariant();
     AutoWrap(DISPATCH_METHOD | DISPATCH_PROPERTYGET, &r->v, method, argchain);
     return r; // may be called with DISPATCH_PROPERTYGET|DISPATCH_METHOD
@@ -445,7 +481,8 @@ void OLE32core::checkOLEresult(string msg)
 
 bool OLE32core::connect(string locale)
 {
-  if(!finalized) checkOLEresult("called twice ? connect");
+  if (!finalized)
+    checkOLEresult("called twice ? connect");
   finalized = false;
   oldlocale = setlocale(LC_ALL, NULL);
   setlocale(LC_ALL, locale.c_str());
@@ -455,7 +492,8 @@ bool OLE32core::connect(string locale)
 
 bool OLE32core::disconnect()
 {
-  if(finalized) checkOLEresult("called twice ? disconnect");
+  if (finalized)
+    checkOLEresult("called twice ? disconnect");
   finalized = true;
   CoUninitialize(); // Uninitialize COM for this thread...
 #ifdef DEBUG
