@@ -1,23 +1,23 @@
 {
-  "name": "win32ole",
-  "version": "0.1.3",
+  "name": "@ctsy/win32ole",
+  "version": "0.0.1",
   "description": "Asynchronous, non-blocking win32ole bindings",
-  "homepage": "https://github.com/idobatter/node-win32ole",
+  "homepage": "https://github.com/c-tsy/node-win32ole",
   "keywords": [
     "OLE", "COM", "ActiveX", "ActiveXObject", "CreateObject", "WSH", "WMI",
     "Outlook", "Access", "Word", "Excel", "IE", "InternetExplorer"
   ],
   "author": {
-    "name": "idobatter",
-    "url": "https://github.com/idobatter",
-    "email": "idobatter@gmail.com"
+    "name": "castle",
+    "url": "https://github.com/c-tsy",
+    "email": "castle@tansuyun.cn"
   },
   "contributors": [
-    "idobatter <idobatter@gmail.com>"
+    "castle <castle@tansuyun.cn>"
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/idobatter/node-win32ole.git"
+    "url": "git://github.com/c-tsy/node-win32ole.git"
   },
   "dependencies": {
     "assert": ">= 0.4.9",
@@ -33,7 +33,7 @@
     "ref": ">= 0.1.3"
   },
   "engines": {
-    "node": ">= 0.8.18 && < 0.9.0"
+    "node": ">= 0.8.18"
   },
   "scripts": {
     "test": "nmake /a test"
